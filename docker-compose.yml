@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  spell-checker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run start
+    ports:
+      - 3000:3000
+    depends_on:
+      - postgres
