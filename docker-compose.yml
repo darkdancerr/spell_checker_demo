@@ -17,11 +17,19 @@ services:
       - 8080:8080
 
   spell-checker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
+    image: spell-checker
+    command: npm run start
+    ports:
+      - 5000:5000
+    depends_on:
+      - postgres
+
+  spell-checker-front:
+    build: ./frontend
+    image: spell-checker-front
     command: npm run start
     ports:
       - 3000:3000
     depends_on:
-      - postgres
+      - spell-checker

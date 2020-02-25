@@ -1,4 +1,4 @@
-import {Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors} from '@nestjs/common';
+import {BadRequestException, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors} from '@nestjs/common';
 import { Response } from 'express';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {DocumentService} from './document.service';
@@ -10,6 +10,9 @@ export class DocumentController {
     @Post()
     @UseInterceptors(FileInterceptor('file'))
     uploadFile(@UploadedFile() file) {
+        if (!file) {
+            throw new BadRequestException('Body cannot be empty');
+        }
         return this.documentsService.saveDocumentAndCheckSpelling(file);
     }
 

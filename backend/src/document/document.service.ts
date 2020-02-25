@@ -1,9 +1,10 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Document} from './document.entity';
 import {Repository} from 'typeorm';
 import {SpellCheckerService} from '../spell-checker/spell-checker.service';
 import {Readable} from 'stream';
+import {DocumentResponseDto} from "./document-response.dto";
 
 @Injectable()
 export class DocumentService {
@@ -14,19 +15,21 @@ export class DocumentService {
     ) {
     }
 
-    saveDocumentAndCheckSpelling(file: any): Promise<string[]> {
+    saveDocumentAndCheckSpelling(file: any): Promise<DocumentResponseDto> {
         const fileBuffer = file.buffer;
         const document = new Document(fileBuffer);
 
         return this.documentRepository.save(document).then(result =>
-            this.spellCheckerService.getMisspelledWords(result.content.toString().split(' ')));
+            new DocumentResponseDto(result.id, this.spellCheckerService.getMisspelledWords(result.content.toString().split(' '))));
     }
 
     getCorrectedDocument(id: number): Promise<Buffer> {
-        const correctedWords = this.documentRepository.findOne(id).then(result =>
-            this.spellCheckerService.correctWordsIfMisspelled(result.content.toString().split(' ')));
-
-        return correctedWords.then(words => Buffer.from(words.join(' '), 'utf8'))
+        return this.documentRepository.findOne(id).then(result => {
+            if (!result) {
+                throw new NotFoundException('Couldn\'t find the requested document');
+            }
+            return this.spellCheckerService.correctWordsIfMisspelled(result.content.toString().split(' '))
+        }).then(words => Buffer.from(words.join(' '), 'utf8'));
     }
 
     getReadableStream(buffer: Buffer): Readable {
